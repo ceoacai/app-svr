@@ -1,8 +1,13 @@
 #app-svr
 
 ##API
-* /v1/hongid/register/smscode[post]: 获取手机验证码
+* /v1/hongid/register/smscode [post]: 获取手机验证码
 ```
+    http body:
+    {
+        tel: "18610889275"
+    }
+
     http status:
         400: 参数错误
         {
@@ -25,8 +30,18 @@
             message: "sfsafasf",
             description: "safewfsdf",
         }
+
+        自定义返回code：
+         -202：参数错误
+         -302：向短信平台发送验证码失败
+         0：一切ok
+
 ```
 * /v1/hongid/register/smscode/atk[post]: 注册第一步完成
+```
+    http status:
+
+```
 * /v1/hongid/register[post]: 绑定昵称&密码
 
 
