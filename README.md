@@ -79,14 +79,15 @@
             nickname: "sdfasdf"
         }
 ```
-* /v1/memberCards/bind [post] :绑定会员卡
+* /v1/memberCards/card/:card/bind/:owner [post] :绑定会员卡
 ```
- json body:
- {
-    owner: 44 (会员id),
-    card: "6320860000000000011"
- }
     400: 请求参数错误 [-202:参数错误]
     500: 服务器内部错误 [-400:内部错误]
     200: OK [0: ok, -306:会员卡不正确, -307:会员卡已被其他会员绑定]
+```
+* /v1/memberCards/card/:card/unbind [post] :解除绑定会员卡
+```
+    400: 请求参数错误 [-202:参数错误]
+    500: 服务器内部错误 [-400:内部错误]
+    200: OK [0: ok, -306:会员卡不正确]
 ```

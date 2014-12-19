@@ -21,6 +21,6 @@ var (
 	hongIdInfoByTel = beego.AppConfig.DefaultString(beego.RunMode + "::hongid_info_tel", "/v1/members/tel/")
 	hongIdInfoById = beego.AppConfig.DefaultString(beego.RunMode + "::hongid_info_id", "/v1/members/id/")
 	memberCardBind = beego.AppConfig.DefaultString(beego.RunMode + "::memberCard_bind", "")
-
+	memberCardUnBind = beego.AppConfig.DefaultString(beego.RunMode + "::memberCard_unbind", "")
 	appUserGroupId = beego.AppConfig.DefaultInt64(beego.RunMode + "::app_group", 1)
 )

@@ -24,22 +24,40 @@ type MemberCardController struct {
 	BaseController
 }
 
-type ReqBindCard struct {
-	Owner  int64  `json:"owner"`
-	Card string `json:"card"`
-}
-
-// @router /bind [post]
+// @router /card/:card/bind/:owner [post]
 func (c *MemberCardController) BindCard() {
-	reqMsg := new(ReqBindCard)
-	if err := json.Unmarshal(c.getHttpBody(), reqMsg); err != nil {
-		c.appenWrongParams(errors.NewFieldError("reqBody", err.Error()))
+	cardStr := c.GetString(":card")
+	ownerId, err1 := c.GetInt64(":owner")
+	if err1 != nil {
+		c.appenWrongParams(errors.NewFieldError(":owner", err1.Error()))
 	}
 
 	// handle http error
 	if c.handleParamError() {return}
 
-	rsp, err := c.forwardHttp("POST", fmt.Sprintf(memberCardBind, hongIdHost, reqMsg.Card, reqMsg.Id), nil)
+	rsp, err := c.forwardHttp("POST", fmt.Sprintf(memberCardBind, hongIdHost, cardStr, ownerId), nil)
+	if err != nil || rsp.StatusCode != http.StatusOK {
+		c.renderInternalError()
+		return
+	}
+
+	commonRsp := errors.UnmarshalCommonResponse(c.getForwardHttpBody(rsp.Body))
+	if commonRsp.Code == errors.CODE_DB_ERR_UPDATE {
+		c.renderInternalError()
+		return
+	}
+
+	c.renderJson(commonRsp)
+}
+
+// @router /card/:card/unbind [post]
+func (c *MemberCardController) UnBindCard() {
+	cardStr := c.GetString(":card")
+
+	// handle http error
+	if c.handleParamError() {return}
+
+	rsp, err := c.forwardHttp("POST", fmt.Sprintf(memberCardUnBind, hongIdHost, cardStr), nil)
 	if err != nil || rsp.StatusCode != http.StatusOK {
 		c.renderInternalError()
 		return
