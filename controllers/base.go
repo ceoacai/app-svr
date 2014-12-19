@@ -6,20 +6,28 @@ package controllers
 import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/context"
+	"github.com/astaxie/beego/logs"
 	"github.com/astaxie/beego/validation"
 	"github.com/globalways/utils_go/errors"
 	"github.com/globalways/utils_go/smsmgr"
-	"net/http"
-	"github.com/astaxie/beego/logs"
+	"github.com/mreiferson/httpclient"
 	"io"
-	"net/http/httptest"
+	"net/http"
+	"time"
+	"io/ioutil"
 )
 
 var (
-	_     context.Context
-	_     logs.BeeLogger
-	valid = new(validation.Validation)
-	sms   = smsmgr.NewDefaultSmsManager()
+	_         context.Context
+	_         logs.BeeLogger
+	valid     = new(validation.Validation)
+	sms       = smsmgr.NewDefaultSmsManager()
+	transport = &httpclient.Transport{
+		ConnectTimeout:        1 * time.Second,
+		RequestTimeout:        10 * time.Second,
+		ResponseHeaderTimeout: 5 * time.Second,
+	}
+	client = &http.Client{Transport: transport}
 )
 
 type BaseController struct {
@@ -62,6 +70,12 @@ func (c *BaseController) renderPng(data []byte) {
 	c.Ctx.Output.EnableGzip = false
 	c.setHttpContentType("image/png")
 	c.setHttpBody(data)
+}
+
+// http internal error
+func (c *BaseController) renderInternalError() {
+	c.setHttpStatus(http.StatusInternalServerError)
+	c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_SYS_ERR_BASE)))
 }
 
 // set http status
@@ -138,7 +152,7 @@ func (c *BaseController) validation(obj interface{}) {
 // generate sms auth code
 func (c *BaseController) genSmsAuthCode(tel string) (string, error) {
 	code, err := sms.GenSmsAuthCode(tel)
-	beego.BeeLogger.Debug("generate sms auth code: %v", code)
+	beego.BeeLogger.Debug("generate sms auth code: %v, err: %v", code, err)
 	return code, err
 }
 
@@ -147,10 +161,13 @@ func (c *BaseController) varifySmsAuthCode(tel, code string) bool {
 	return sms.Verify(tel, code)
 }
 
-func (c *BaseController) forwardHttp(method, url string, body io.Reader) *httptest.ResponseRecorder {
+func (c *BaseController) forwardHttp(method, url string, body io.Reader) (*http.Response, error) {
 	req, _ := http.NewRequest(method, url, body)
-	rsp := httptest.NewRecorder()
-	beego.BeeApp.Handlers.ServeHTTP(rsp, req)
+	return client.Do(req)
+}
 
-	return rsp
+func (c *BaseController) getForwardHttpBody(body io.ReadCloser) []byte {
+	bodyBytes, _ := ioutil.ReadAll(body)
+
+	return bodyBytes
 }

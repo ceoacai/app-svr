@@ -18,6 +18,7 @@ func init() {
 		beego.NSNamespace("/hongid",
 			beego.NSInclude(
 				&controllers.RegisterController{},
+				&controllers.LoginController{},
 			),
 		),
 	)

@@ -14,9 +14,12 @@
 package controllers
 
 import (
-	"encoding/json"
-	"github.com/globalways/utils_go/errors"
 	"bytes"
+	"encoding/json"
+	hm "github.com/globalways/hongId_models/models"
+	"github.com/globalways/utils_go/convert"
+	"github.com/globalways/utils_go/errors"
+	"github.com/globalways/utils_go/security"
 	"net/http"
 )
 
@@ -39,6 +42,8 @@ type MemberTel struct {
 	Tel string `valid:"Mobile" json:"tel"`
 }
 
+// curl -i -H "Content-Type: application/json" -i -d '{"tel":"18610889275"}' 123.57.132.7:8082/v1/hongid/register/smscode
+// curl -i -H "Content-Type: application/json" -i -d '{"tel":"18610889275"}' 127.0.0.1:8082/v1/hongid/register/smscode
 // @router /register/smscode [post]
 func (c *RegisterController) SmsCode() {
 	// 解析httpbody
@@ -72,9 +77,12 @@ type MemberTelAtk struct {
 
 // app 手机注册
 type ReqRegisterMemberByTel struct {
-	Tel string `json:"tel"`
+	Tel   string `json:"tel"`
+	Group int64  `json:"group"`
 }
 
+// curl -i -H "Content-Type: application/json" -i -d '{"tel":"18610889275", "code":""}' 123.57.132.7:8082/v1/hongid/register/smscode/atk
+// curl -i -H "Content-Type: application/json" -i -d '{"tel":"18610889275", "code":"693512"}' 127.0.0.1:8082/v1/hongid/register/smscode/atk
 // @router /register/smscode/atk [post]
 func (c *RegisterController) SmsCodeAtk() {
 	// 解析httpbody
@@ -92,30 +100,37 @@ func (c *RegisterController) SmsCodeAtk() {
 	}
 
 	// 验证手机验证码正确性
-	if !c.varifySmsAuthCode(memberTelAtk.Tel, memberTelAtk.Code) {
-		c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_BISS_ERR_SMS_CODE)))
-		return
-	}
+//	if !c.varifySmsAuthCode(memberTelAtk.Tel, memberTelAtk.Code) {
+//		c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_BISS_ERR_SMS_CODE)))
+//		return
+//	}
 
 	// 转发http请求
 	reqMsg := &ReqRegisterMemberByTel{
 		Tel: memberTelAtk.Tel,
+		Group: appUserGroupId,
 	}
 	reqBytes, err := json.Marshal(reqMsg)
 	if err != nil {
-		c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_SYS_ERR_BASE)))
+		c.renderInternalError()
 		return
 	}
-	rsp := c.forwardHttp("POST", hongIdUrl + "/members/register/tel", bytes.NewReader(reqBytes))
-	switch rsp.Code {
-	case http.StatusBadRequest || http.StatusInternalServerError:
-		c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_SYS_ERR_BASE)))
+	rsp, err := c.forwardHttp("POST", hongIdHost+hongIdRegByTel, bytes.NewReader(reqBytes))
+	if err != nil {
+		c.renderInternalError()
+		return
+	}
+	defer rsp.Body.Close()
+
+	switch rsp.StatusCode {
+	case http.StatusBadRequest, http.StatusInternalServerError:
+		c.renderInternalError()
 		return
 	case http.StatusCreated:
 		c.renderJson(errors.NewCommonOutRsp(errors.ErrorOK()))
 		return
 	case http.StatusOK:
-		commonRsp := errors.UnmarshalCommonResponse(rsp.Body.Bytes())
+		commonRsp := errors.UnmarshalCommonResponse(c.getForwardHttpBody(rsp.Body))
 		if commonRsp.Code == errors.CODE_BISS_ERR_TEL_ALREADY_IN {
 			c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_BISS_ERR_TEL_ALREADY_IN)))
 			return
@@ -125,7 +140,67 @@ func (c *RegisterController) SmsCodeAtk() {
 	c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_SYS_ERR_BASE)))
 }
 
+type MemberRegister struct {
+	Tel      string `json:"tel" valid:"Mobile"`
+	NickName string `json:"nickname" valid:"Required"`
+	Password string `json:"password" valid:"Required"`
+}
+
+// curl -i -H "Content-Type: application/json" -i -d '{"tel":"18610889275", "nickName":"mint","password":"123456"}' 123.57.132.7:8082/v1/hongid/register
+// curl -i -H "Content-Type: application/json" -i -d '{"tel":"18610889275", "nickName":"mint","password":"123456"}' 127.0.0.1:8082/v1/hongid/register
 // @router /register [post]
 func (c *RegisterController) Register() {
+	// 解析httpbody
+	memberReg := new(MemberRegister)
+	if err := json.Unmarshal(c.getHttpBody(), memberReg); err != nil {
+		c.appenWrongParams(errors.NewFieldError("memberTelAtk json", err.Error()))
+	}
 
+	// 验证输入参数
+	c.validation(memberReg)
+
+	// handle http request param
+	if c.handleParamError() {
+		return
+	}
+
+	rspMemberInfo, err := c.forwardHttp("GET", hongIdHost+hongIdInfoByTel+memberReg.Tel, nil)
+	if err != nil {
+		c.renderInternalError()
+		return
+	}
+	switch rspMemberInfo.StatusCode {
+	case http.StatusInternalServerError:
+		c.renderInternalError()
+		return
+	case http.StatusOK:
+		break
+	}
+
+	member := new(hm.Member)
+	if err := json.Unmarshal(c.getForwardHttpBody(rspMemberInfo.Body), member); err != nil {
+		c.renderInternalError()
+		return
+	}
+
+	member.NickName = memberReg.NickName
+	member.PassWord = security.GenerateFromPassword(memberReg.Password)
+	member.Status = hm.EMemberStatus_Use
+
+	reqBytes, err := json.Marshal(member)
+	if err != nil {
+		c.renderInternalError()
+		return
+	}
+	rspMemberUpd, err := c.forwardHttp("PUT", hongIdHost+hongIdInfoById+convert.Int642str(member.Id), bytes.NewReader(reqBytes))
+	if err != nil {
+		c.renderInternalError()
+		return
+	}
+	switch rspMemberUpd.StatusCode {
+	case http.StatusOK:
+		c.renderJson(errors.NewCommonOutRsp(errors.ErrorOK()))
+	default:
+		c.renderInternalError()
+	}
 }

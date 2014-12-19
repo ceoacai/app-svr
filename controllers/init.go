@@ -16,5 +16,9 @@ package controllers
 import "github.com/astaxie/beego"
 
 var (
-	hongIdUrl = beego.AppConfig.DefaultString(beego.RunMode + "::hongid_host", "127.0.0.1:8080")
+	hongIdHost = beego.AppConfig.DefaultString(beego.RunMode + "::hongid_host", "http://127.0.0.1:8080")
+	hongIdRegByTel = beego.AppConfig.DefaultString(beego.RunMode + "::hongid_reg_tel", "/v1/members/register/tel")
+	hongIdInfoByTel = beego.AppConfig.DefaultString(beego.RunMode + "::hongid_info_tel", "/v1/members/tel/")
+	hongIdInfoById = beego.AppConfig.DefaultString(beego.RunMode + "::hongid_info_id", "/v1/members/id/")
+	appUserGroupId = beego.AppConfig.DefaultInt64(beego.RunMode + "::app_group", 1)
 )
