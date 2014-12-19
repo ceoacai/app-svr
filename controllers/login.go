@@ -19,6 +19,7 @@ import (
 	"net/http"
 	hm "github.com/globalways/hongId_models/models"
 	"github.com/globalways/utils_go/security"
+	"fmt"
 )
 
 type LoginController struct {
@@ -70,7 +71,7 @@ func (c *LoginController) Login() {
 	var err error
 	switch {
 	case reqLogin.IsTel():
-		rsp, err = c.forwardHttp("GET", hongIdHost+hongIdInfoByTel+reqLogin.UserName, nil)
+		rsp, err = c.forwardHttp("GET", fmt.Sprintf(hongIdInfoByTel, hongIdHost, reqLogin.UserName), nil)
 	case reqLogin.IsEmail():
 	case reqLogin.IsHongId():
 	default:

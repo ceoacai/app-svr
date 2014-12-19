@@ -21,6 +21,7 @@ import (
 	"github.com/globalways/utils_go/errors"
 	"github.com/globalways/utils_go/security"
 	"net/http"
+	"fmt"
 )
 
 type RegisterController struct {
@@ -115,7 +116,7 @@ func (c *RegisterController) SmsCodeAtk() {
 		c.renderInternalError()
 		return
 	}
-	rsp, err := c.forwardHttp("POST", hongIdHost+hongIdRegByTel, bytes.NewReader(reqBytes))
+	rsp, err := c.forwardHttp("POST", fmt.Sprintf(hongIdRegByTel, hongIdHost), bytes.NewReader(reqBytes))
 	if err != nil {
 		c.renderInternalError()
 		return
@@ -164,7 +165,7 @@ func (c *RegisterController) Register() {
 		return
 	}
 
-	rspMemberInfo, err := c.forwardHttp("GET", hongIdHost+hongIdInfoByTel+memberReg.Tel, nil)
+	rspMemberInfo, err := c.forwardHttp("GET", fmt.Sprintf(hongIdInfoByTel, hongIdHost, memberReg.Tel), nil)
 	if err != nil {
 		c.renderInternalError()
 		return
@@ -192,7 +193,7 @@ func (c *RegisterController) Register() {
 		c.renderInternalError()
 		return
 	}
-	rspMemberUpd, err := c.forwardHttp("PUT", hongIdHost+hongIdInfoById+convert.Int642str(member.Id), bytes.NewReader(reqBytes))
+	rspMemberUpd, err := c.forwardHttp("PUT", fmt.Sprintf(hongIdInfoById, hongIdHost, member.Id), bytes.NewReader(reqBytes))
 	if err != nil {
 		c.renderInternalError()
 		return
