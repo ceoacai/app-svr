@@ -17,7 +17,6 @@ import (
 	"bytes"
 	"encoding/json"
 	hm "github.com/globalways/hongId_models/models"
-	"github.com/globalways/utils_go/convert"
 	"github.com/globalways/utils_go/errors"
 	"github.com/globalways/utils_go/security"
 	"net/http"
@@ -41,6 +40,7 @@ type RegisterController struct {
 
 type MemberTel struct {
 	Tel string `valid:"Mobile" json:"tel"`
+
 }
 
 // curl -i -H "Content-Type: application/json" -i -d '{"tel":"18610889275"}' 123.57.132.7:8082/v1/hongid/register/smscode
@@ -50,7 +50,8 @@ func (c *RegisterController) SmsCode() {
 	// 解析httpbody
 	memberTel := new(MemberTel)
 	if err := json.Unmarshal(c.getHttpBody(), memberTel); err != nil {
-		c.appenWrongParams(errors.NewFieldError("memberTelPhone json", err.Error()))
+		c.renderInternalError()
+		return
 	}
 
 	// 验证手机号正确性
@@ -64,11 +65,11 @@ func (c *RegisterController) SmsCode() {
 	// TODO 请求短信网关
 	_, err := c.genSmsAuthCode(memberTel.Tel)
 	if err != nil {
-		c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_BISS_ERR_SMS_FAIL)))
+		c.renderJson(errors.NewErrorRsp(errors.CODE_BISS_ERR_SMS_GATE_FAIL))
 		return
 	}
 
-	c.renderJson(errors.NewCommonOutRsp(errors.ErrorOK()))
+	c.renderJson(errors.NewGlobalwaysErrorRsp(errors.ErrorOK()))
 }
 
 type MemberTelAtk struct {
@@ -89,7 +90,8 @@ func (c *RegisterController) SmsCodeAtk() {
 	// 解析httpbody
 	memberTelAtk := new(MemberTelAtk)
 	if err := json.Unmarshal(c.getHttpBody(), memberTelAtk); err != nil {
-		c.appenWrongParams(errors.NewFieldError("memberTelAtk json", err.Error()))
+		c.renderInternalError()
+		return
 	}
 
 	// 验证输入参数
@@ -124,21 +126,21 @@ func (c *RegisterController) SmsCodeAtk() {
 	defer rsp.Body.Close()
 
 	switch rsp.StatusCode {
-	case http.StatusBadRequest, http.StatusInternalServerError:
-		c.renderInternalError()
-		return
 	case http.StatusCreated:
-		c.renderJson(errors.NewCommonOutRsp(errors.ErrorOK()))
+		c.renderJson(errors.NewGlobalwaysErrorRsp(errors.ErrorOK()))
 		return
 	case http.StatusOK:
 		commonRsp := errors.UnmarshalCommonResponse(c.getForwardHttpBody(rsp.Body))
 		if commonRsp.Code == errors.CODE_BISS_ERR_TEL_ALREADY_IN {
-			c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_BISS_ERR_TEL_ALREADY_IN)))
+			c.renderJson(errors.NewErrorRsp((errors.CODE_BISS_ERR_TEL_ALREADY_IN)))
 			return
 		}
+	default:
+		c.renderInternalError()
+		return
 	}
 
-	c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_SYS_ERR_BASE)))
+	c.renderJson(errors.NewErrorRsp(errors.CODE_SYS_ERR_BASE))
 }
 
 type MemberRegister struct {
@@ -154,7 +156,8 @@ func (c *RegisterController) Register() {
 	// 解析httpbody
 	memberReg := new(MemberRegister)
 	if err := json.Unmarshal(c.getHttpBody(), memberReg); err != nil {
-		c.appenWrongParams(errors.NewFieldError("memberTelAtk json", err.Error()))
+		c.renderJson(errors.NewErrorRsp(errors.CODE_SYS_ERR_BASE))
+		return
 	}
 
 	// 验证输入参数
@@ -171,11 +174,10 @@ func (c *RegisterController) Register() {
 		return
 	}
 	switch rspMemberInfo.StatusCode {
-	case http.StatusInternalServerError:
+	case http.StatusOK:
+	default:
 		c.renderInternalError()
 		return
-	case http.StatusOK:
-		break
 	}
 
 	member := new(hm.Member)
@@ -194,14 +196,10 @@ func (c *RegisterController) Register() {
 		return
 	}
 	rspMemberUpd, err := c.forwardHttp("PUT", fmt.Sprintf(hongIdInfoById, hongIdHost, member.Id), bytes.NewReader(reqBytes))
-	if err != nil {
+	if err != nil || rspMemberUpd.StatusCode != http.StatusOK {
 		c.renderInternalError()
 		return
 	}
-	switch rspMemberUpd.StatusCode {
-	case http.StatusOK:
-		c.renderJson(errors.NewCommonOutRsp(errors.ErrorOK()))
-	default:
-		c.renderInternalError()
-	}
+
+	c.renderJson(errors.NewGlobalwaysErrorRsp(errors.ErrorOK()))
 }

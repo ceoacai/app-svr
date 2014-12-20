@@ -20,6 +20,7 @@ import (
 	hm "github.com/globalways/hongId_models/models"
 	"github.com/globalways/utils_go/security"
 	"fmt"
+	"log"
 )
 
 type LoginController struct {
@@ -45,10 +46,8 @@ func (req *ReqLogin) IsHongId() bool {
 }
 
 type RspLogin struct {
-	Id  int64 `json:"id"`
-	UUID string `json:"uuid"`
-	HongId string `json:"hongid"`
-	NickName string `json:"nickname"`
+	Status *errors.StatusRsp `json:"status"`
+	Member *hm.Member `json:"body"`
 }
 
 // curl -i -H "Content-Type: application/json" -d '{"username": "18610889275", "password": "123456"}' 127.0.0.1:8082/v1/hongid/login
@@ -56,7 +55,8 @@ type RspLogin struct {
 func (c *LoginController) Login() {
 	reqLogin := new(ReqLogin)
 	if err := json.Unmarshal(c.getHttpBody(), reqLogin); err != nil {
-		c.appenWrongParams(errors.NewFieldError("reqBody", err.Error()))
+		c.renderJson(errors.NewErrorRsp(errors.CODE_SYS_ERR_BASE))
+		return
 	}
 
 	// 验证输入参数
@@ -71,17 +71,22 @@ func (c *LoginController) Login() {
 	var err error
 	switch {
 	case reqLogin.IsTel():
+		log.Println("是手机号登录")
 		rsp, err = c.forwardHttp("GET", fmt.Sprintf(hongIdInfoByTel, hongIdHost, reqLogin.UserName), nil)
 	case reqLogin.IsEmail():
 	case reqLogin.IsHongId():
 	default:
-		c.setHttpStatus(http.StatusForbidden)
-		c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_BISS_ERR_USER_NAME)))
+		c.renderJson(errors.NewErrorRsp(errors.CODE_BISS_ERR_USER_NAME))
 		return
 	}
 
 	if err != nil || rsp.StatusCode == http.StatusInternalServerError {
 		c.renderInternalError()
+		return
+	}
+
+	if rsp.StatusCode == http.StatusNotFound {
+		c.renderJson(errors.NewErrorRsp(errors.CODE_BISS_ERR_USER_NAME))
 		return
 	}
 
@@ -92,16 +97,14 @@ func (c *LoginController) Login() {
 	}
 
 	if !security.CompareHashAndPassword(member.PassWord, reqLogin.PassWord) {
-		c.setHttpStatus(http.StatusForbidden)
-		c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_BISS_ERR_PASSWORD)))
+		c.renderJson(errors.NewErrorRsp(errors.CODE_BISS_ERR_PASSWORD))
 		return
 	}
 
 	rspLogin := new(RspLogin)
-	rspLogin.Id = member.Id
-	rspLogin.UUID = member.UUID
-	rspLogin.HongId = member.HongId
-	rspLogin.NickName = member.NickName
+	rspLogin.Status = errors.NewStatusRsp(errors.CODE_SUCCESS)
+	rspLogin.Member = member
+
 	c.renderJson(rspLogin)
 }
 

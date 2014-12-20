@@ -74,8 +74,7 @@ func (c *BaseController) renderPng(data []byte) {
 
 // http internal error
 func (c *BaseController) renderInternalError() {
-	c.setHttpStatus(http.StatusInternalServerError)
-	c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_SYS_ERR_BASE)))
+	c.renderJson(errors.NewErrorRsp(errors.CODE_SYS_ERR_BASE))
 }
 
 // set http status
@@ -112,8 +111,8 @@ func (c *BaseController) combineUrl(router string) string {
 // handle http request param error
 func (c *BaseController) handleParamError() bool {
 	if c.isParamsWrong() {
-		c.setHttpStatus(http.StatusBadRequest)
-		c.renderJson(errors.NewFiledErrors(errors.CODE_HTTP_ERR_INVALID_PARAMS, c.fieldErrors))
+//		c.setHttpStatus(http.StatusBadRequest)
+		c.renderJson(errors.NewErrorRspf(errors.CODE_HTTP_ERR_INVALID_PARAMS, c.fieldErrors[0].Message))
 
 		for _, err := range c.fieldErrors {
 			beego.BeeLogger.Debug("filedError: %v", err)
@@ -171,3 +170,4 @@ func (c *BaseController) getForwardHttpBody(body io.ReadCloser) []byte {
 
 	return bodyBytes
 }
+

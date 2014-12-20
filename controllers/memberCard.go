@@ -14,7 +14,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"github.com/globalways/utils_go/errors"
 	"fmt"
 	"net/http"
@@ -24,6 +23,7 @@ type MemberCardController struct {
 	BaseController
 }
 
+// curl -i 127.0.0.1:8082/v1/memberCards/card/6320860000000000011/bind/1
 // @router /card/:card/bind/:owner [post]
 func (c *MemberCardController) BindCard() {
 	cardStr := c.GetString(":card")
@@ -50,6 +50,7 @@ func (c *MemberCardController) BindCard() {
 	c.renderJson(commonRsp)
 }
 
+// curl -i 127.0.0.1:8082/v1/memberCards/card/6320860000000000011/unbind
 // @router /card/:card/unbind [post]
 func (c *MemberCardController) UnBindCard() {
 	cardStr := c.GetString(":card")
