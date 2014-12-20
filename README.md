@@ -67,35 +67,14 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
         password: "lsjdfoiwejfoj"
     }
     200: OK [0: ok, -202:参数错误, -304: 用户名错误, -305: 密码错误, -400:内部错误]
-         "body": {
-            "Id": 1,
-            "UUID": "88b72b7a-7eee-11e4-ac93-6003088a18fa",
-            "HongId": "86046",
-            "Tel": "18610889275",
-            "Email": "",
-            "PassWord": "$2a$10$j2kjLUhgyaZhv5TvPP9PD.k1OzYr92s4bdffzVyMamZMAYfHC14tO",
-            "NickName": "mint",
-            "Avatar": "",
-            "Group": {
-              "Id": 1,
-              "GroupName": "",
-              "GroupDesc": "",
-              "Contribution": 0,
-              "Status": 0,
-              "StatusStr": "",
-              "Created": "0001-01-01T00:00:00Z",
-              "Updated": "0001-01-01T00:00:00Z",
-              "Members": null
-            },
-            "MemberCards": null,
-            "CustomerCards": null,
-            "Growth": null,
-            "GrowthPoint": 0,
-            "Status": 4,
-            "Created": "2014-12-07T07:26:09Z",
-            "Updated": "2014-12-20T07:57:32Z",
-            "MemberProfile": null
-          }
+          "body": {
+             "id": 1,
+             "hongid": "86046",
+             "tel": "18610889275",
+             "email": "",
+             "nickname": "mint"
+           }
+
 ```
 * /v1/memberCards/card/:card/bind/:owner [post] :绑定会员卡
 ```

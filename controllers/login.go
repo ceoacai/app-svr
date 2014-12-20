@@ -15,12 +15,12 @@ package controllers
 
 import (
 	"encoding/json"
-	"github.com/globalways/utils_go/errors"
-	"net/http"
-	hm "github.com/globalways/hongId_models/models"
-	"github.com/globalways/utils_go/security"
 	"fmt"
+	hm "github.com/globalways/hongId_models/models"
+	"github.com/globalways/utils_go/errors"
+	"github.com/globalways/utils_go/security"
 	"log"
+	"net/http"
 )
 
 type LoginController struct {
@@ -47,7 +47,15 @@ func (req *ReqLogin) IsHongId() bool {
 
 type RspLogin struct {
 	Status *errors.StatusRsp `json:"status"`
-	Member *hm.Member `json:"body"`
+	Body   *BodyLogin        `json:"body"`
+}
+
+type BodyLogin struct {
+	Id       int64  `json:"id"`
+	HongId   string `json:"hongid"`
+	Tel      string `json:"tel"`
+	Email    string `json:"email"`
+	NickName string `json:"nickname"`
 }
 
 // curl -i -H "Content-Type: application/json" -d '{"username": "18610889275", "password": "123456"}' 127.0.0.1:8082/v1/hongid/login
@@ -103,9 +111,14 @@ func (c *LoginController) Login() {
 
 	rspLogin := new(RspLogin)
 	rspLogin.Status = errors.NewStatusRsp(errors.CODE_SUCCESS)
-	rspLogin.Member = member
+	body := &BodyLogin{
+		Id:       member.Id,
+		HongId:   member.HongId,
+		Tel:      member.Tel,
+		Email:    member.Email,
+		NickName: member.NickName,
+	}
+	rspLogin.Body = body
 
 	c.renderJson(rspLogin)
 }
-
-
