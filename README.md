@@ -70,6 +70,64 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
              "nickname": "mint"     string
            }
 ```
+* /v1/store/brush [post]: 筛选商铺
+```
+    body:
+        gps: 40.047669,116.313082 string
+        ordertype: 1(综合), 2(销量), 3(人气) int
+        productcount: 3 int
+        storepage: 1 int
+        storesize: 10 int
+        industryid: 0(全部) int
+        distance: 0(附近), 1(1公里), 2(3公里), 3(5公里), 4(10公里) int
+        keywordsearch: 辣条 string
+    status
+        200: OK [0: ok, -202:参数错误, -400:内部错误, ]
+        "body": {
+            "stores":{
+                [
+                    {
+                        "storeid": 1, int
+                        "storename": 辣条馆, string
+                        "industryname": 餐饮, string
+                        "distance": 549, int
+                        "avatar": http://pic.baidu.com/jiejal.jpg, string
+                        "products":{
+                            [
+                                {
+                                    "productid": 1, int
+                                    "productname": 辣条, string
+                                    "productavatar": http://pic.baidu.com/latiao.jpg, string
+                                    "productprice": 100, int
+                                    "productunit": 袋 string
+                                },
+                                {}
+                            ]
+                        }
+                    },
+                    {}
+                ]
+            },
+            "filters":{
+                "industryfilters":{
+                    [
+                        {
+                            "itemid":0, int
+                            "itemname":"全部" string
+                        },
+                        {"itemid":1,"itemname":"餐饮"}
+                    ]
+                },
+                "distancefilters":{
+                    [
+                        {"itemid":0,"itemname":"附近"},
+                        {"itemid":1,"itemname":"1公里"}
+                    ]
+                }
+            }
+        }
+```
+
 * /v1/memberCards/card/:card/bind/:owner [post] :绑定会员卡
 ```
     200: OK [0: ok, -202:参数错误， -306:会员卡不正确, -307:会员卡已被其他会员绑定，-400:内部错误]
