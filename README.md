@@ -32,29 +32,34 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
 * /v1/public/smscode [post]: 获取手机验证码
 ```
     body:
-        tel=18610889275&type=1     string,int   注册验证码
-        tel=18610889275&type=2     string,int   找回密码验证码
+        type: 1(注册验证码),2(找回密码）int
+        tel: 18610888575 string
     status:
         200 OK [0:ok, -202:参数错误, -302:验证码发送失败]
 ```
 * /v1/hongid/register/smschk [post]: 注册第一步完成
 ```
     body:
-        tel=18610889275&code=123455     string,string
+        tel: 18609484759 string
+        code: 123456 string
     status:
         200: OK [0:ok, -202:参数错误, -303:验证码错误, -301: 手机号已经被注册, -400:内部错误]
 ```
 * /v1/hongid/register/info [post]: 绑定昵称&密码
 ```
     body:
-        tel=18610889275&nickname=mint&password=123456   string,string,string
+        tel:18610889275 string
+        nickname: mint string
+        password: 123456 string
+
     status:
         200: OK [0:ok, -202:参数错误, -400:内部错误]
 ```
 * /v1/hongid/login [post]: 登录
 ```
     body:
-        username=18610889275&password=123456    string,string
+        username: 18610889275 string
+        password: 123456    string
     status
         200: OK [0: ok, -202:参数错误, -304: 用户名错误, -305: 密码错误, -400:内部错误]
           "body": {
