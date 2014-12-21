@@ -24,3 +24,9 @@ var (
 	memberCardUnBind = beego.AppConfig.DefaultString(beego.RunMode + "::memberCard_unbind", "")
 	appUserGroupId = beego.AppConfig.DefaultInt64(beego.RunMode + "::app_group", 1)
 )
+
+// 验证码类型
+const (
+	TYPE_REGISTER = iota + 1
+	TYPE_FIND_PASSWORD
+)

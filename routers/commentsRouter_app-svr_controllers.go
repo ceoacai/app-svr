@@ -6,27 +6,6 @@ import (
 
 func init() {
 	
-	beego.GlobalControllerRouter["app-svr/controllers:RegisterController"] = append(beego.GlobalControllerRouter["app-svr/controllers:RegisterController"],
-		beego.ControllerComments{
-			"SmsCode",
-			`/register/smscode`,
-			[]string{"post"},
-			nil})
-
-	beego.GlobalControllerRouter["app-svr/controllers:RegisterController"] = append(beego.GlobalControllerRouter["app-svr/controllers:RegisterController"],
-		beego.ControllerComments{
-			"SmsCodeAtk",
-			`/register/smscode/atk`,
-			[]string{"post"},
-			nil})
-
-	beego.GlobalControllerRouter["app-svr/controllers:RegisterController"] = append(beego.GlobalControllerRouter["app-svr/controllers:RegisterController"],
-		beego.ControllerComments{
-			"Register",
-			`/register`,
-			[]string{"post"},
-			nil})
-
 	beego.GlobalControllerRouter["app-svr/controllers:LoginController"] = append(beego.GlobalControllerRouter["app-svr/controllers:LoginController"],
 		beego.ControllerComments{
 			"Login",
@@ -45,6 +24,27 @@ func init() {
 		beego.ControllerComments{
 			"UnBindCard",
 			`/card/:card/unbind`,
+			[]string{"post"},
+			nil})
+
+	beego.GlobalControllerRouter["app-svr/controllers:RegisterController"] = append(beego.GlobalControllerRouter["app-svr/controllers:RegisterController"],
+		beego.ControllerComments{
+			"SmsCode",
+			`/smscode`,
+			[]string{"post"},
+			nil})
+
+	beego.GlobalControllerRouter["app-svr/controllers:RegisterController"] = append(beego.GlobalControllerRouter["app-svr/controllers:RegisterController"],
+		beego.ControllerComments{
+			"SmsCodeAtk",
+			`/register/smscode/atk`,
+			[]string{"post"},
+			nil})
+
+	beego.GlobalControllerRouter["app-svr/controllers:RegisterController"] = append(beego.GlobalControllerRouter["app-svr/controllers:RegisterController"],
+		beego.ControllerComments{
+			"Register",
+			`/register`,
 			[]string{"post"},
 			nil})
 

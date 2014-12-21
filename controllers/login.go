@@ -16,11 +16,12 @@ package controllers
 import (
 	"encoding/json"
 	"fmt"
-	hm "github.com/globalways/hongId_models/models"
 	"github.com/globalways/utils_go/errors"
 	"github.com/globalways/utils_go/security"
-	"log"
 	"net/http"
+	"github.com/globalways/utils_go/convert"
+	"regexp"
+	"github.com/globalways/utils_go/consts"
 )
 
 type LoginController struct {
@@ -28,12 +29,16 @@ type LoginController struct {
 }
 
 type ReqLogin struct {
-	UserName string `json:"username"`
-	PassWord string `json:"password"`
+	UserName string `form:"username"`
+	PassWord string `form:"password"`
 }
 
 // login username is telphone?
 func (req *ReqLogin) IsTel() bool {
+	if b, err := regexp.MatchString(consts.Regexp_Mobile, req.UserName); !b || err != nil {
+		return false
+	}
+
 	return true
 }
 
@@ -45,11 +50,6 @@ func (req *ReqLogin) IsHongId() bool {
 	return false
 }
 
-type RspLogin struct {
-	Status *errors.StatusRsp `json:"status"`
-	Body   *BodyLogin        `json:"body"`
-}
-
 type BodyLogin struct {
 	Id       int64  `json:"id"`
 	HongId   string `json:"hongid"`
@@ -58,12 +58,12 @@ type BodyLogin struct {
 	NickName string `json:"nickname"`
 }
 
-// curl -i -H "Content-Type: application/json" -d '{"username": "18610889275", "password": "123456"}' 127.0.0.1:8082/v1/hongid/login
+// curl -i -d "username=18610889275&password=123456" 127.0.0.1:8082/v1/hongid/login
 // @router /login [post]
 func (c *LoginController) Login() {
 	reqLogin := new(ReqLogin)
-	if err := json.Unmarshal(c.getHttpBody(), reqLogin); err != nil {
-		c.renderJson(errors.NewErrorRsp(errors.CODE_SYS_ERR_BASE))
+	if err := c.ParseForm(reqLogin); err != nil {
+		c.renderInternalError()
 		return
 	}
 
@@ -79,46 +79,57 @@ func (c *LoginController) Login() {
 	var err error
 	switch {
 	case reqLogin.IsTel():
-		log.Println("是手机号登录")
 		rsp, err = c.forwardHttp("GET", fmt.Sprintf(hongIdInfoByTel, hongIdHost, reqLogin.UserName), nil)
 	case reqLogin.IsEmail():
 	case reqLogin.IsHongId():
 	default:
-		c.renderJson(errors.NewErrorRsp(errors.CODE_BISS_ERR_USER_NAME))
+		c.renderJson(errors.NewClientRsp(errors.CODE_BISS_ERR_USER_NAME))
 		return
 	}
 
-	if err != nil || rsp.StatusCode == http.StatusInternalServerError {
+	if err != nil {
+		c.renderInternalError()
+		return
+	}
+	defer rsp.Body.Close()
+
+	clientRsp := new(errors.ClientRsp)
+	if err := json.Unmarshal(c.getForwardHttpBody(rsp.Body), clientRsp); err != nil {
 		c.renderInternalError()
 		return
 	}
 
-	if rsp.StatusCode == http.StatusNotFound {
-		c.renderJson(errors.NewErrorRsp(errors.CODE_BISS_ERR_USER_NAME))
+	switch clientRsp.Status.Code {
+	case errors.CODE_BISS_ERR_USER_NAME:
+		c.renderJson(errors.NewClientRsp(errors.CODE_BISS_ERR_USER_NAME))
 		return
-	}
-
-	member := new(hm.Member)
-	if err := json.Unmarshal(c.getForwardHttpBody(rsp.Body), member); err != nil {
+	case errors.CODE_SUCCESS:
+		break
+	default:
 		c.renderInternalError()
 		return
 	}
 
-	if !security.CompareHashAndPassword(member.PassWord, reqLogin.PassWord) {
-		c.renderJson(errors.NewErrorRsp(errors.CODE_BISS_ERR_PASSWORD))
+	body, ok := clientRsp.Body.(map[string]interface {})
+	if !ok {
+		c.renderInternalError()
 		return
 	}
 
-	rspLogin := new(RspLogin)
-	rspLogin.Status = errors.NewStatusRsp(errors.CODE_SUCCESS)
-	body := &BodyLogin{
-		Id:       member.Id,
-		HongId:   member.HongId,
-		Tel:      member.Tel,
-		Email:    member.Email,
-		NickName: member.NickName,
+	if !security.CompareHashAndPassword(body["PassWord"].(string), reqLogin.PassWord) {
+		c.renderJson(errors.NewClientRsp(errors.CODE_BISS_ERR_PASSWORD))
+		return
 	}
-	rspLogin.Body = body
+
+	rspLogin := new(errors.ClientRsp)
+	rspLogin.Status = errors.NewStatus(errors.CODE_SUCCESS)
+	rspLogin.Body = &BodyLogin{
+		Id:       convert.Float642Int64(body["Id"].(float64)),
+		HongId:   body["HongId"].(string),
+		Tel:      body["Tel"].(string),
+		Email:    body["Email"].(string),
+		NickName: body["NickName"].(string),
+	}
 
 	c.renderJson(rspLogin)
 }

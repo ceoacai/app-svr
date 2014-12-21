@@ -12,9 +12,9 @@ import (
 	"github.com/globalways/utils_go/smsmgr"
 	"github.com/mreiferson/httpclient"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
-	"io/ioutil"
 )
 
 var (
@@ -42,6 +42,8 @@ func (c *BaseController) Prepare() {
 
 	//prepare for enable gzip
 	c.Ctx.Output.EnableGzip = true
+
+
 
 	// handle schema error
 	//	c.handleConnSchemaError()
@@ -74,7 +76,7 @@ func (c *BaseController) renderPng(data []byte) {
 
 // http internal error
 func (c *BaseController) renderInternalError() {
-	c.renderJson(errors.NewErrorRsp(errors.CODE_SYS_ERR_BASE))
+	c.renderJson(errors.NewClientRsp(errors.CODE_SYS_ERR_BASE))
 }
 
 // set http status
@@ -94,7 +96,6 @@ func (c *BaseController) setHttpBody(body []byte) {
 
 // get http request body
 func (c *BaseController) getHttpBody() []byte {
-	beego.BeeLogger.Debug("httpBody: %v", c.Ctx.Input.RequestBody)
 	return c.Ctx.Input.RequestBody
 }
 
@@ -111,8 +112,7 @@ func (c *BaseController) combineUrl(router string) string {
 // handle http request param error
 func (c *BaseController) handleParamError() bool {
 	if c.isParamsWrong() {
-//		c.setHttpStatus(http.StatusBadRequest)
-		c.renderJson(errors.NewErrorRspf(errors.CODE_HTTP_ERR_INVALID_PARAMS, c.fieldErrors[0].Message))
+		c.renderJson(errors.NewClientRspf(errors.CODE_HTTP_ERR_INVALID_PARAMS, c.fieldErrors[0].Message))
 
 		for _, err := range c.fieldErrors {
 			beego.BeeLogger.Debug("filedError: %v", err)
@@ -148,8 +148,8 @@ func (c *BaseController) validation(obj interface{}) {
 	}
 }
 
-// generate sms auth code
-func (c *BaseController) genSmsAuthCode(tel string) (string, error) {
+// send sms auth code
+func (c *BaseController) sendSMScode(tel string, codeType int) (string, error) {
 	code, err := sms.GenSmsAuthCode(tel)
 	beego.BeeLogger.Debug("generate sms auth code: %v, err: %v", code, err)
 	return code, err
@@ -170,4 +170,3 @@ func (c *BaseController) getForwardHttpBody(body io.ReadCloser) []byte {
 
 	return bodyBytes
 }
-

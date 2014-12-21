@@ -9,11 +9,11 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
 通用返回结构
     {
         "status":{
-            code: 0,
-            message: "sfsafasf"
+            "code": 0,  int
+            "msg": "sfsafasf"  string
         }
         "body":{
-            xxxxxxx
+            "xxx":"xxx"
         }
     }
 
@@ -29,52 +29,41 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
     -307：会员卡已被其他用户绑定
     -400：系统内部错误
 ```
-* /v1/hongid/register/smscode [post]: 获取手机验证码
+* /v1/public/smscode [post]: 获取手机验证码
 ```
-    json body:
-    {
-        tel: "18610889275"
-    }
-
+    body:
+        tel=18610889275&type=1     string,int   注册验证码
+        tel=18610889275&type=2     string,int   找回密码验证码
     status:
         200 OK [0:ok, -202:参数错误, -302:验证码发送失败]
 ```
-* /v1/hongid/register/smscode/atk [post]: 注册第一步完成
+* /v1/hongid/register/smschk [post]: 注册第一步完成
 ```
-    json body:
-    {
-        tel: "18610889275",
-        code: "748573"
-    }
+    body:
+        tel=18610889275&code=123455     string,string
     status:
         200: OK [0:ok, -202:参数错误, -303:验证码错误, -301: 手机号已经被注册, -400:内部错误]
 ```
-* /v1/hongid/register[post]: 绑定昵称&密码
+* /v1/hongid/register/info [post]: 绑定昵称&密码
 ```
-    json body:
-    {
-        tel: "18610889275",
-        nickname: "sss",
-        password: "lsjdfoiwejfoj"
-    }
-    200: OK [0:ok, -202:参数错误, -400:内部错误]
+    body:
+        tel=18610889275&nickname=mint&password=123456   string,string,string
+    status:
+        200: OK [0:ok, -202:参数错误, -400:内部错误]
 ```
 * /v1/hongid/login [post]: 登录
 ```
-    json body:
-    {
-        username: "18610889275",
-        password: "lsjdfoiwejfoj"
-    }
-    200: OK [0: ok, -202:参数错误, -304: 用户名错误, -305: 密码错误, -400:内部错误]
+    body:
+        username=18610889275&password=123456    string,string
+    status
+        200: OK [0: ok, -202:参数错误, -304: 用户名错误, -305: 密码错误, -400:内部错误]
           "body": {
-             "id": 1,
-             "hongid": "86046",
-             "tel": "18610889275",
-             "email": "",
-             "nickname": "mint"
+             "id": 1,   int64
+             "hongid": "86046",     string
+             "tel": "18610889275",  string
+             "email": "",   string
+             "nickname": "mint"     string
            }
-
 ```
 * /v1/memberCards/card/:card/bind/:owner [post] :绑定会员卡
 ```
