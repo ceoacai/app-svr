@@ -15,12 +15,11 @@ package models
 
 import (
 	"fmt"
-	"github.com/globalways/utils_go/random"
-	"strings"
-	"sort"
 	"github.com/astaxie/beego/validation"
+	"github.com/globalways/utils_go/random"
+	"sort"
+	"strings"
 )
-
 
 type ReqStoreList struct {
 	GPS string `form:"gps"`
@@ -32,13 +31,15 @@ type ReqStoreList struct {
 	StoreSize    uint `form:"storesize"`
 
 	IndustryId int64 `form:"industryid"`
-	Distance   uint  `form:"distance"`
+	Distance   uint  `form:"distance"` // 距离xx千米以内的商铺
 
 	KeywordSearch string `form:"keywordsearch"`
 }
 
 func (p *ReqStoreList) Valid(v *validation.Validation) {
-	v.Required(p, "GPS").Message("GPS信息不能为空.")
+	if len(p.GPS) == 0 {
+		v.SetError("gps", "GPS信息不能为空.")
+	}
 	if strings.Index(p.GPS, ",") < 0 {
 		v.SetError("gps", "GPS信息格式不正确.")
 	}
@@ -54,15 +55,15 @@ func (p *ReqStoreList) Valid(v *validation.Validation) {
 	}
 
 	if p.ProductCount < 0 {
-		v.SetError("productcount", "首页商品显示个数格式错误.")
+		v.SetError("productcount", "首页商铺商品显示个数格式错误.")
 	}
 
 	if p.StorePage < 0 {
-		v.SetError("storepage", "商品分页错误.")
+		v.SetError("storepage", "商铺分页错误.")
 	}
 
 	if p.StoreSize <= 0 {
-		v.SetError("storesize", "商品分页数量错误.")
+		v.SetError("storesize", "商铺分页数量错误.")
 	}
 
 	if p.IndustryId < 0 {
@@ -76,11 +77,12 @@ func (p *ReqStoreList) Valid(v *validation.Validation) {
 }
 
 type DataProduct struct {
-	ProductId     int64
-	ProductName   string
-	ProductAvatar string
-	ProductPrice  uint
-	ProductUnit   string
+	ProductId       int64
+	ProductName     string
+	ProductAvatar   string
+	ProductPrice    float64
+	ProductCurrency string
+	ProductUnit     string
 }
 
 type DataStore struct {
@@ -100,9 +102,8 @@ type DataIndustry struct {
 }
 
 var (
-	Stores map[int64]*DataStore
+	Stores    map[int64]*DataStore
 	Industrys map[int64]string
-	Distances map[int64]string
 )
 
 func init() {
@@ -111,13 +112,6 @@ func init() {
 	Industrys[0] = "全部"
 	Industrys[1] = "餐饮"
 	Industrys[2] = "水果"
-
-	Distances = make(map[int64]string)
-	Distances[0] = "附近"
-	Distances[1] = "1公里"
-	Distances[2] = "3公里"
-	Distances[3] = "5公里"
-	Distances[4] = "10公里"
 
 	Stores = make(map[int64]*DataStore)
 
@@ -194,7 +188,6 @@ func SearchStore(req *ReqStoreList) (stores []*DataStore) {
 		}
 	}
 
-
 	// GPS
 
 	// OrderType
@@ -220,7 +213,7 @@ func SearchStore(req *ReqStoreList) (stores []*DataStore) {
 	sort.Sort(StoreIdSorter(stores))
 
 	// StorePage StoreSize
-	stores = stores[(req.StorePage - 1)*req.StoreSize : req.StorePage*req.StoreSize]
+	stores = stores[(req.StorePage-1)*req.StoreSize : req.StorePage*req.StoreSize]
 
 	return
 }

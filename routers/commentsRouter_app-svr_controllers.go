@@ -6,6 +6,13 @@ import (
 
 func init() {
 	
+	beego.GlobalControllerRouter["app-svr/controllers:LoginController"] = append(beego.GlobalControllerRouter["app-svr/controllers:LoginController"],
+		beego.ControllerComments{
+			"Login",
+			`/login`,
+			[]string{"post"},
+			nil})
+
 	beego.GlobalControllerRouter["app-svr/controllers:MemberCardController"] = append(beego.GlobalControllerRouter["app-svr/controllers:MemberCardController"],
 		beego.ControllerComments{
 			"BindCard",
@@ -45,13 +52,6 @@ func init() {
 		beego.ControllerComments{
 			"Brush",
 			`/brush`,
-			[]string{"post"},
-			nil})
-
-	beego.GlobalControllerRouter["app-svr/controllers:LoginController"] = append(beego.GlobalControllerRouter["app-svr/controllers:LoginController"],
-		beego.ControllerComments{
-			"Login",
-			`/login`,
 			[]string{"post"},
 			nil})
 

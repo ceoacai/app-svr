@@ -20,6 +20,7 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
 状态码
     0：everything is ok.
     -202：参数错误.
+    -203: GET请求非法
     -301：手机号已被注册.
     -302：短信网关错误
     -303：验证码错误
@@ -80,7 +81,7 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
         storepage: 1 int
         storesize: 10 int
         industryid: 0(全部) int
-        distance: 0(附近), 1(1公里), 2(3公里), 3(5公里), 4(10公里) int
+        distance: n(n公里) int
         keywordsearch: 辣条 string
     status
         200: OK [0: ok, -202:参数错误, -400:内部错误, ]
@@ -91,7 +92,7 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
                         "storeid": 1, int
                         "storename": 辣条馆, string
                         "industryname": 餐饮, string
-                        "distance": 549, int
+                        "distance": 5.5, double
                         "avatar": http://pic.baidu.com/jiejal.jpg, string
                         "products":{
                             [
@@ -99,7 +100,8 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
                                     "productid": 1, int
                                     "productname": 辣条, string
                                     "productavatar": http://pic.baidu.com/latiao.jpg, string
-                                    "productprice": 100, int
+                                    "productprice": 100, double
+                                    "productcurrency": "元", string
                                     "productunit": 袋 string
                                 },
                                 {}
@@ -118,14 +120,47 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
                         },
                         {"itemid":1,"itemname":"餐饮"}
                     ]
-                },
-                "distancefilters":{
-                    [
-                        {"itemid":0,"itemname":"附近"},
-                        {"itemid":1,"itemname":"1公里"}
-                    ]
                 }
             }
+        }
+```
+* /v1/store/storeDetail [post]
+```
+    body:
+        storeid: 1 int
+    status
+        200: OK [0: ok, -202:参数错误, -400:内部错误, ]
+        "body":{
+            "storeid": 1    int
+            "storename": "商铺名称" string
+            "storedesc": "商铺描述" string
+            "storegps": "75.9398,83.858843" string
+            "storeaddress": "中国北京天安门"   string
+            "avatar": "http://pic.baidu.com/jjsd.jpg"   string
+            "storephone": "13847584934" string
+            "producthotlimit": 20   int (商铺中的某一商品销量超过20就标志为hot，商铺属性)
+        }
+```
+* /v1/store/products [post]
+```
+    body:
+        storeid: 1  int
+        productpage: 1  int
+        productsize: 10 int
+    status:
+        200: OK [0: ok, -202:参数错误, -400:内部错误, ]
+        "body":{
+            "productid": 1  int
+            "productname": "商品名称"   string
+            "productavatar": "http://pic.baidu.com/jdsjf.jpg"   string
+            "productprice": 9.99    double
+            "productcurrency":  元   string
+            "productunit":  袋   string
+            "productsalescnt": 30   int
+            "productstockcnt": 50   int
+            "productviewcnt":  100  int
+            "mgrrecommendflag": true    boolean
+            "productstocklimit": 10     int (商品库存告急线)
         }
 ```
 

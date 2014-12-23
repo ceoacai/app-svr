@@ -43,7 +43,8 @@ func (c *BaseController) Prepare() {
 	//prepare for enable gzip
 	c.Ctx.Output.EnableGzip = true
 
-
+	// forbiden get
+	c.forbidenGet()
 
 	// handle schema error
 	//	c.handleConnSchemaError()
@@ -53,6 +54,13 @@ func (c *BaseController) Prepare() {
 func (c *BaseController) handleConnSchemaError() {
 	if !c.Ctx.Input.IsSecure() {
 		c.renderJson(errors.NewCommonOutRsp(errors.New(errors.CODE_HTTP_ERR_NOT_HTTPS)))
+	}
+}
+
+// forbiden http get method
+func (c *BaseController) forbidenGet() {
+	if c.Ctx.Input.IsGet() {
+		c.renderJson(errors.NewClientRsp(errors.CODE_HTTP_ERR_NOT_ALLOW_GET))
 	}
 }
 

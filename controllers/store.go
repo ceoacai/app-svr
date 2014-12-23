@@ -14,18 +14,16 @@
 package controllers
 
 import (
-	"github.com/globalways/utils_go/errors"
 	"app-svr/models"
+	"github.com/globalways/utils_go/errors"
 )
 
 type StoreController struct {
 	BaseController
 }
 
-
 type BodyStoreBrushFilters struct {
 	IndustryFilters []*BrushFilterItem `json:"industryfilters"`
-	DistanceFilters []*BrushFilterItem `json:"distancefilters"`
 }
 
 type BrushFilterItem struct {
@@ -42,23 +40,24 @@ type BodyStoreBref struct {
 	StoreId      int64              `json:"storeid"`
 	StoreName    string             `json:"storename"`
 	IndustryName string             `json:"industryname"`
-	Distance     int                `json:"distance"`
+	Distance     float64            `json:"distance"`
 	Avatar       string             `json:"avatar"`
 	Products     []*BodyProductBref `json:"products"`
 }
 
 type BodyProductBref struct {
-	ProductId     int64  `json:"productid"`
-	ProductName   string `json:"productname"`
-	ProductAvatar string `json:"productavatar"`
-	ProductPrice  uint   `json:"productprice"`
-	ProductUnit   string `json:"productunit"`
+	ProductId       int64   `json:"productid"`
+	ProductName     string  `json:"productname"`
+	ProductAvatar   string  `json:"productavatar"`
+	ProductPrice    float64 `json:"productprice"`
+	ProductCurrency string  `json:"productcurrency"`
+	ProductUnit     string  `json:"productunit"`
 }
 
 // 筛选
 // curl -i -d "gps=4938,8473&ordertype=1&orderorder=1&productcount=3&storepage=1&storesize=10&industryid=0&distance=1000" 127.0.0.1:8082/v1/store/brush
 // @router /brush [post]
-func (c *StoreController) Brush() {
+func (c *StoreController) BrushStoreList() {
 	reqMsg := new(models.ReqStoreList)
 	if err := c.ParseForm(reqMsg); err != nil {
 		c.renderInternalError()
@@ -116,15 +115,54 @@ func (c *StoreController) Brush() {
 			}
 			filters.IndustryFilters = industryFilters
 
-			distanceFilters := make([]*BrushFilterItem, 0)
-			for key, val := range models.Distances {
-				distanceFilters = append(distanceFilters, &BrushFilterItem{key, val})
-			}
-			filters.DistanceFilters = distanceFilters
-
 			return filters
 		}(),
 	}
 
 	c.renderJson(clientRsp)
+}
+
+type ReqStoreDetail struct {
+	StoreId int64 `form:"storeid"`
+}
+
+type BodyStoreDetail struct {
+	StoreId         int64  `json:"storeid"`
+	StoreName       string `json:"storename"`
+	StoreDesc       string `json:"storedesc"`
+	StoreGPS        string `json:"storegps"`
+	StoreAddress    string `json:"storeaddress"`
+	Avatar          string `json:"avatar"`
+	StorePhone      string `json:"storephone"`
+	ProductHotLimit uint   `json:"producthotlimit"`
+}
+
+// @router /storeDetail [post]
+func (c *StoreController) StoreDetail() {
+
+}
+
+type ReqStoreProducts struct {
+	StoreId     int64 `form:"storeid"`
+	ProductPage uint  `form:"productpage"`
+	ProductSize uint  `form:"productsize"`
+}
+
+type BodyStoreProducts struct {
+	ProductId         int64   `json:"productid"`
+	ProductName       string  `json:"productname"`
+	ProductAvatar     string  `json:"productavatar"`
+	ProductPrice      float64 `json:"productprice"`
+	ProductCurrency   string  `json:"productcurrency"`
+	ProductUnit       string  `json:"productunit"`
+	ProductSalesCnt   uint    `json:"productsalescnt"`
+	ProductStockCnt   uint    `json:"productstockcnt"`
+	ProductViewCnt    uint    `json:"productviewcnt"`
+	MgrRecommendFlag  bool    `json:"mgrrecommendflag"`
+	ProductStockLimit uint    `json:"productstocklimit"`
+}
+
+// @router /products [post]
+func (c *StoreController) StoreProductList() {
+
 }
