@@ -22,7 +22,6 @@ import (
 	"github.com/globalways/utils_go/consts"
 	"github.com/globalways/utils_go/errors"
 	"github.com/globalways/utils_go/security"
-	"log"
 	"regexp"
 )
 

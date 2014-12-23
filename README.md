@@ -75,6 +75,7 @@ ps -ef | grep app-svr | awk '{print $2}' | xargs kill -9
     body:
         gps: 40.047669,116.313082 string
         ordertype: 1(综合), 2(销量), 3(人气) int
+        orderorder: 1(升序), 2(降序) int
         productcount: 3 int
         storepage: 1 int
         storesize: 10 int

@@ -13,23 +13,15 @@
 // under the License.
 package controllers
 
+import (
+	"github.com/globalways/utils_go/errors"
+	"app-svr/models"
+)
+
 type StoreController struct {
 	BaseController
 }
 
-type ReqStoreList struct {
-	GPS string `form:"gps"`
-
-	OrderType    int  `form:"ordertype"`
-	ProductCount int  `form:"productcount"`
-	StorePage    uint `form:"storepage"`
-	StoreSize    uint `form:"storesize"`
-
-	IndustryId int64 `form:"industryid"`
-	Distance   int   `form:"distance"`
-
-	KeywordSearch string `form:"keywordsearch"`
-}
 
 type BodyStoreBrushFilters struct {
 	IndustryFilters []*BrushFilterItem `json:"industryfilters"`
@@ -64,6 +56,75 @@ type BodyProductBref struct {
 }
 
 // 筛选
+// curl -i -d "gps=4938,8473&ordertype=1&orderorder=1&productcount=3&storepage=1&storesize=10&industryid=0&distance=1000" 127.0.0.1:8082/v1/store/brush
 // @router /brush [post]
 func (c *StoreController) Brush() {
+	reqMsg := new(models.ReqStoreList)
+	if err := c.ParseForm(reqMsg); err != nil {
+		c.renderInternalError()
+		return
+	}
+
+	// 参数验证
+	c.validation(reqMsg)
+
+	// handle param error
+	if c.handleParamError() {
+		return
+	}
+
+	stores := models.SearchStore(reqMsg)
+	storesBref := make([]*BodyStoreBref, 0)
+	for _, store := range stores {
+		storeBref := &BodyStoreBref{
+			StoreId:      store.StoreId,
+			StoreName:    store.StoreName,
+			IndustryName: store.IndustryName,
+			Avatar:       store.Avatar,
+			Products: func() []*BodyProductBref {
+				products := make([]*BodyProductBref, 0)
+				for _, product := range store.Products {
+					productBref := &BodyProductBref{
+						ProductId:     product.ProductId,
+						ProductName:   product.ProductName,
+						ProductAvatar: product.ProductAvatar,
+						ProductPrice:  product.ProductPrice,
+						ProductUnit:   product.ProductUnit,
+					}
+					products = append(products, productBref)
+				}
+				return products
+			}(),
+		}
+		storesBref = append(storesBref, storeBref)
+	}
+
+	clientRsp := new(errors.ClientRsp)
+	clientRsp.Status = errors.NewStatus(errors.CODE_SUCCESS)
+	clientRsp.Body = &BodyStoreList{
+		Stores: storesBref,
+		Filters: func() *BodyStoreBrushFilters {
+			if reqMsg.StorePage != 1 {
+				return nil
+			}
+
+			filters := new(BodyStoreBrushFilters)
+
+			industryFilters := make([]*BrushFilterItem, 0)
+			for key, val := range models.Industrys {
+				industryFilters = append(industryFilters, &BrushFilterItem{key, val})
+			}
+			filters.IndustryFilters = industryFilters
+
+			distanceFilters := make([]*BrushFilterItem, 0)
+			for key, val := range models.Distances {
+				distanceFilters = append(distanceFilters, &BrushFilterItem{key, val})
+			}
+			filters.DistanceFilters = distanceFilters
+
+			return filters
+		}(),
+	}
+
+	c.renderJson(clientRsp)
 }
